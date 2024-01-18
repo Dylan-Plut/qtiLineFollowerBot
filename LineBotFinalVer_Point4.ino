@@ -152,52 +152,64 @@ void lemmeOutPls()
 
 void dropoff()
 {
-  int SL = analogRead(qti1);
-  int SC = analogRead(qti2);
-  int SR = analogRead(qti3);
-  
-  SLonLine = (SL >= 500);
-  SRonLine = (SR >= 500);
-  SConLine = (SC >= 500);
-  
-  if (SConLine && !SRonLine && !SLonLine) // Moving Forwards
-  {
-    digitalWrite(motorpinLF, HIGH);
-    digitalWrite(motorpinRF, HIGH);
-  } 
-  else if (!SConLine && !SRonLine && SLonLine) // Moving Left
-  {
-    while (!SConLine)
-    {
-      digitalWrite(motorpinLF, LOW);
-      digitalWrite(motorpinRF, HIGH);
+  bool droppedoff = false; 
 
-      int SL = analogRead(qti1);
-      int SC = analogRead(qti2);
-      int SR = analogRead(qti3);
-
-      SLonLine = (SL >= 500);
-      SRonLine = (SR >= 500);
-      SConLine = (SC >= 500);
-    }
-  }
-  else if (!SConLine && SRonLine && !SLonLine) // Moving Right
+  while (!droppedoff)
   {
-    while (!SConLine)
+    int SL = analogRead(qti1);
+    int SC = analogRead(qti2);
+    int SR = analogRead(qti3);
+  
+    SLonLine = (SL >= 500);
+    SRonLine = (SR >= 500);
+    SConLine = (SC >= 500);
+
+    if (SConLine && !SRonLine && !SLonLine) // Moving Forwards
     {
       digitalWrite(motorpinLF, HIGH);
-      digitalWrite(motorpinRF, LOW);
+      digitalWrite(motorpinRF, HIGH);
+    } 
+    else if (!SConLine && !SRonLine && SLonLine) // Moving Left
+    {
+      while (!SConLine)
+      {
+        digitalWrite(motorpinLF, LOW);
+        digitalWrite(motorpinRF, HIGH);
 
-      int SL = analogRead(qti1);
-      int SC = analogRead(qti2);
-      int SR = analogRead(qti3);
+        int SL = analogRead(qti1);
+        int SC = analogRead(qti2);
+        int SR = analogRead(qti3);
 
-      SLonLine = (SL >= 500);
-      SRonLine = (SR >= 500);
-      SConLine = (SC >= 500);
+        SLonLine = (SL >= 500);
+        SRonLine = (SR >= 500);
+        SConLine = (SC >= 500);
+      }
+    }
+    else if (!SConLine && SRonLine && !SLonLine) // Moving Right
+    {
+      while (!SConLine)
+      {
+        digitalWrite(motorpinLF, HIGH);
+        digitalWrite(motorpinRF, LOW);
+
+        int SL = analogRead(qti1);
+        int SC = analogRead(qti2);
+        int SR = analogRead(qti3);
+
+        SLonLine = (SL >= 500);
+        SRonLine = (SR >= 500);
+        SConLine = (SC >= 500);
+      }
+    }
+    else if (SConLine && SRonLine &&!SLonLine)
+    {
+      while (!SConLine || SRonLine) //MAY NEED TO BE REVISED
+      {
+        digitalWrite(motorpinRF, LOW);
+        digitalWrite(motorpinLF, HIGH); 
+      }
     }
   }
-  //else if (SConLine && )
 }
 
 void loop() 
@@ -207,9 +219,6 @@ void loop()
   if (phase2)
   {
     Serial.println("Dropping off");
-    while (droppedoff)
-    {
-      
-    }
+    dropoff();
   }
 }
