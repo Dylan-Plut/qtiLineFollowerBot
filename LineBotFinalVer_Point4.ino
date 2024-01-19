@@ -29,8 +29,13 @@ void setup()
   Serial.begin(9600);
 }
 
+//Global varaibles to help determine logic for turning
+bool phase1 = true;
 bool phase2 = false;
+bool phase3 = false;
 
+
+//The move function controlls motor-sensor logic from the start location untill ball pickup phase
 void move()
 {
   int SL = analogRead(qti1);
@@ -82,7 +87,7 @@ void move()
   {
     digitalWrite(motorpinLF, LOW);
     digitalWrite(motorpinRF, HIGH);
-    delay(800);
+    delay(1000);
   }
   else if (SConLine && !SRonLine && SLonLine)//Positioning to pickup golfball
   {
@@ -96,6 +101,7 @@ void move()
   }
 }
 
+//The smart pickup is a more optimized ball pickup function, controlling motor-sensor logic durnig the lineup, pickup, and escape procces
 void smartPickup()
 {
   //Stop Motors
@@ -111,7 +117,6 @@ void smartPickup()
 
   digitalWrite(motorpinLF, LOW);
   digitalWrite(motorpinRF, LOW);
-  Serial.println("Thinking about tank turning");
 
   while (!(SConLine && SRonLine && SLonLine))
   {
@@ -124,7 +129,6 @@ void smartPickup()
     SRonLine = (SR >= 500);
     SConLine = (SC >= 500);
 
-    Serial.println("Tank Turning");
     digitalWrite(motorpinLR, LOW);
     digitalWrite(motorpinRF, HIGH); // Tank Turn Left
   }
@@ -142,15 +146,16 @@ void lemmeOutPls()
   //Reverse outta there
   digitalWrite(motorpinLR, HIGH);
   digitalWrite(motorpinRR, HIGH);
-  delay(650);
+  delay(600);
   Serial.println("Reversing");
   digitalWrite(motorpinLR, LOW);
-  delay(1000);
+  delay(950);
   digitalWrite(motorpinRR, LOW);
   phase2 = true;
 }
 
-void dropoff()
+//Second phase of program, handles motor-sensor logic for lining up the dropoff of the ball
+void lineup()
 {
   bool droppedoff = false; 
 
@@ -201,24 +206,97 @@ void dropoff()
         SConLine = (SC >= 500);
       }
     }
-    else if (SConLine && SRonLine &&!SLonLine)
+    else if (SConLine && SRonLine &&!SLonLine) //Right turn, lining up phase 3 
     {
-      while (!SConLine || SRonLine) //MAY NEED TO BE REVISED
+      digitalWrite(motorpinRF, LOW);
+      digitalWrite(motorpinLF, HIGH);
+      delay(650);
+      while (!SConLine) 
       {
         digitalWrite(motorpinRF, LOW);
         digitalWrite(motorpinLF, HIGH); 
       }
+      droppedoff = true;
+    } 
+  }
+  digitalWrite(motorpinRF, LOW);
+  digitalWrite(motorpinLF, LOW);
+  phase3 = true;
+}
+
+//handles the final phase of the program, motor-sensor logic for dropping off the golf ball
+void dropoff()
+{
+  int SL = analogRead(qti1);
+  int SC = analogRead(qti2);
+  int SR = analogRead(qti3);
+  
+  SLonLine = (SL >= 500);
+  SRonLine = (SR >= 500);
+  SConLine = (SC >= 500);
+  
+  if (SConLine && !SRonLine && !SLonLine) // Moving Forwards
+  {
+    digitalWrite(motorpinLF, HIGH);
+    digitalWrite(motorpinRF, HIGH);
+  } 
+  else if (!SConLine && !SRonLine && SLonLine) // Moving Left
+  {
+    while (!SConLine)
+    {
+      digitalWrite(motorpinLF, LOW);
+      digitalWrite(motorpinRF, HIGH);
+
+      int SL = analogRead(qti1);
+      int SC = analogRead(qti2);
+      int SR = analogRead(qti3);
+
+      SLonLine = (SL >= 500);
+      SRonLine = (SR >= 500);
+      SConLine = (SC >= 500);
     }
+  }
+  else if (!SConLine && SRonLine && !SLonLine) // Moving Right
+  {
+    while (!SConLine)
+    {
+      digitalWrite(motorpinLF, HIGH);
+      digitalWrite(motorpinRF, LOW);
+
+      int SL = analogRead(qti1);
+      int SC = analogRead(qti2);
+      int SR = analogRead(qti3);
+
+      SLonLine = (SL >= 500);
+      SRonLine = (SR >= 500);
+      SConLine = (SC >= 500);
+    }
+  }
+  else if (SConLine && SRonLine && SLonLine)
+  {
+    digitalWrite(motorpinLF, LOW);
+    digitalWrite(motorpinRF, LOW);
   }
 }
 
+//main loop to be executed during program runtime
 void loop() 
 {
-  move();
-
+  if (phase1)
+  {
+    Serial.println("PHASE1");
+    move();
+  }
   if (phase2)
   {
-    Serial.println("Dropping off");
+    Serial.println("PHASE2");
+    phase1 = false;
+    lineup();
+  }
+  if (phase3)
+  {
+    Serial.println("PHASE3");
+    phase2 = false;
     dropoff();
   }
 }
